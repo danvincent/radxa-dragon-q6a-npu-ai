@@ -16,7 +16,7 @@ When genie-rs loads the `llama32-1b` model (backend_type `QnnHtp`), it produces 
     "max-num-tokens": 512,
     "context": {
       "version": 1,
-      "size": 1024,
+      "size": 4096,
       "n-vocab": 128256,
       "bos-token": 128000,
       "eos-token": 128009,

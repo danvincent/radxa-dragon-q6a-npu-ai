@@ -36,7 +36,7 @@ pub fn generate_qnn_config(model: &ModelEntry) -> String {
             "rope-theta": rope_theta
         });
         // Add Llama 3 rope scaling for models with kv_dim=64 (like Llama 3.2 1B)
-        if kv_dim == 64 {
+        if kv_dim == 64 && (model.rope_theta.unwrap_or(1000000.0) - 500000.0).abs() < 0.1 {
             pos_enc["rope-scaling"] = json!({
                 "rope-type": "llama3",
                 "factor": 32.0,

@@ -37,11 +37,16 @@ See `docs/02-npu-dma-fix.md` for the full procedure.
 
 ### 2. Model
 
-- **Model**: Llama 3.2 1B (text generation, instruction-tuned)
+- **Models**:
+  - **Llama 3.2 1B** — QNN HTP context binary, INT8, 4096 context
+  - **Qwen2.5-Coder-0.5B** — QNN HTP context binary, INT8, 32768 context
 - **Format**: QNN HTP context binary (`.serialized.bin`) — pre-compiled for Hexagon v68
-- **Source**: [ModelScope — radxa/Llama3.2-1B-1024-qairt-v68](https://modelscope.cn/models/radxa/Llama3.2-1B-1024-qairt-v68)
-- **Size**: 1.7 GB (INT8 quantized, 1024 context window)
-- Includes: `libQnnHtp.so`, `libQnnHtpV68Stub.so`, `libQnnHtpV68Skel.so`, `libGenie.so`, tokenizer, configs
+- **Source**:
+  - Llama: [ModelScope — radxa/Llama3.2-1B-1024-qairt-v68](https://modelscope.cn/models/radxa/Llama3.2-1B-1024-qairt-v68) (recompiled for 4096 context)
+  - Qwen: Pre-compiled via `qnn-context-binary-generator` pipeline
+- **Size**:
+  - Llama: 1.7 GB (INT8 quantized, 4096 context window)
+  - Qwen: 310 MB (INT8 quantized, 32768 context window)
 
 ### 3. genie-rs API Server
 
@@ -83,24 +88,41 @@ The 32 MB pool sits in a ~144 MB gap between CDSP and ADSP regions.
 ## Key Constraints
 
 | Constraint | Detail |
-|------------|--------|
-| **CWD must be model dir** | `libQnnHtp.so` reads `libQnnHtpV68Skel.so` from CWD (not LD_LIBRARY_PATH) |
-| **Context window** | 1024 tokens — limited by the pre-compiled context binary |
-| **Memory** | ~3.5 GB used during inference (1.7 GB model + 32 MB DMA pool + framework) |
-| **NPU only** | This setup uses QNN HTP (Hexagon), not CPU. GenAiTransformer is a fallback |
-| **1B model limit** | No larger v68 context binaries exist. 3B+ would need CPU GenAiTransformer |
+| **Context window** | 4096 (Llama), 32768 (Qwen) — limited by pre-compiled context binary |
+| **Memory** | ~3.5 GB during inference (1.7 GB Llama + 32 MB DMA pool + framework) |
+| **NPU only** | Uses QNN HTP (Hexagon v68). GenAiTransformer CPU fallback available |
+| **Tool calling** | Server-side routing — not model-dependent |
 
 ## File Layout on Dragon
 
 ```
 /home/daniel/
-├── llama-v68-model/              # ModelScope model directory
+├── llama-4096-v68-model/         # Llama model directory
 │   ├── models/
 │   │   └── weight_sharing_model_1_of_1.serialized.bin  (1.7 GB)
 │   ├── tokenizer.json
 │   ├── htp-model-config-llama32-1b-gqa.json
 │   ├── htp_backend_ext_config.json
 │   ├── configuration.json
+│   ├── libQnnHtp.so
+│   └── libQnnHtpV68Skel.so
+├── Qwen2.5-0.5B-v68/             # Qwen model directory
+│   ├── qwen-compiled.serialized.bin  (310 MB)
+│   ├── qwen2.5-0.5b.json
+│   ├── config.json
+│   ├── tokenizer.json
+│   └── htp_backend_ext_config.json
+├── qairt/2.47.0.260601/          # QAIRT SDK
+│   ├── lib/aarch64-oe-linux-gcc11.2/
+│   ├── bin/aarch64-oe-linux-gcc11.2/
+│   └── include/QNN/
+├── source/dragon-ai/             # genie-rs source + build
+│   ├── genie-rs/
+│   │   ├── src/
+│   │   ├── Cargo.toml
+│   │   └── models/registry.toml
+│   └── target/release/genie-rs
+```
 │   ├── libQnnHtp.so
 │   ├── libQnnHtpV68Stub.so
 │   ├── libQnnHtpV68Skel.so       (8.3 MB — Hexagon DSP binary)

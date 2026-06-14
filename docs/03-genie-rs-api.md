@@ -76,22 +76,42 @@ Updated:
 ```toml
 default_model = "llama32-1b"
 
+```toml
+default_model = "llama32-1b"
+
 [models."llama32-1b"]
 model_type = "basic"
-context_size = 1024
+context_size = 4096
 n_vocab = 128256
 bos_token = 128000
 eos_token = 128009
 pad_token = 128004
-tokenizer = "/home/daniel/llama-v68-model/tokenizer.json"
-ctx_bins = ["/home/daniel/llama-v68-model/models/weight_sharing_model_1_of_1.serialized.bin"]
+tokenizer = "/home/daniel/llama-4096-v68-model/tokenizer.json"
+ctx_bins = ["/home/daniel/llama-4096-v68-model/models/weight_sharing_model_1_of_1.serialized.bin"]
 chat_template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 backend_type = "QnnHtp"
 kv_dim = 64
 pos_id_dim = 32
 rope_theta = 500000.0
 htp_poll = true
-htp_ext = "/home/daniel/llama-v68-model/htp_backend_ext_config.json"
+htp_ext = "/home/daniel/llama-4096-v68-model/htp_backend_ext_config.json"
+
+[models."qwen2.5-coder-0.5b"]
+model_type = "basic"
+context_size = 32768
+n_vocab = 151936
+bos_token = 151644
+eos_token = 151643
+pad_token = 151643
+tokenizer = "/home/daniel/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = ["/home/daniel/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin"]
+chat_template = "<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{user_input}<|im_end|>\n<|im_start|>assistant\n"
+backend_type = "QnnHtp"
+kv_dim = 64
+pos_id_dim = 32
+rope_theta = 1000000.0
+htp_poll = true
+htp_ext = "/home/daniel/Qwen2.5-0.5B-v68/htp_backend_ext_config.json"
 ```
 
 ## Critical: CWD Requirement
@@ -103,6 +123,44 @@ htp_ext = "/home/daniel/llama-v68-model/htp_backend_ext_config.json"
 cd ~/llama-v68-model
 genie-rs serve --host 0.0.0.0:8080 --registry ~/source/dragon-ai/models/registry.toml
 ```
+
+## Tool Calling
+
+genie-rs implements **server-side tool routing** to support function calling without requiring model-level understanding.
+
+When a request includes `tools` and the user message matches a tool name or description keyword, the server returns an immediate `tool_calls` response:
+
+```bash
+curl http://dragon:8080/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model":"qwen2.5-coder-0.5b",
+    "messages":[{"role":"user","content":"read the file /etc/hostname"}],
+    "tools":[{"type":"function","function":{"name":"read_file","description":"Read a file","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}}]
+  }'
+# → tool_calls: read_file({"path":"/etc/hostname"})
+```
+
+The tool result is then fed back to the model for text generation:
+
+```bash
+curl http://dragon:8080/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model":"qwen2.5-coder-0.5b",
+    "messages":[
+      {"role":"user","content":"read the file /etc/hostname"},
+      {"role":"assistant","tool_calls":[{"id":"call_1","type":"function","function":{"name":"read_file","arguments":"{\"path\":\"/etc/hostname\"}"}}]},
+      {"role":"tool","tool_call_id":"call_1","content":"{\"hostname\":\"dragon\"}"}
+    ]
+  }'
+# → "The hostname is 'dragon'."
+```
+
+Matching strategies:
+- **Exact name**: `read_file` matches `read_file`
+- **Name parts**: `read_file` splits to `read` + `file`, both must be present in message
+- **Description keywords**: words > 4 chars from tool description
 
 The systemd service file sets this automatically:
 ```
