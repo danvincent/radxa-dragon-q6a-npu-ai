@@ -1,0 +1,43 @@
+// NPU DMA Fix — Device Tree Overlay
+// Adds fastrpc DMA pool and wires it to CDSP/ADSP fastrpc nodes
+// Deploy: copy to /boot/dtbo/ and add to managed.list
+/dts-v1/;
+/plugin/;
+
+/ {
+	metadata {
+		title = "Enable NPU DMA Fix for QNN HTP";
+		compatible = "radxa,dragon-q6a";
+		category = "misc";
+		description = "Adds 32MB shared-dma-pool at 0x89000000 for fastrpc DMA, enabling QNN HTP backend to communicate with CDSP/ADSP NPU firmware.";
+	};
+
+	fragment@0 {
+		target-path = "/reserved-memory";
+		__overlay__ {
+			#address-cells = <0x02>;
+			#size-cells = <0x02>;
+			ranges;
+
+			fastrpc_dma_pool: fastrpc@89000000 {
+				compatible = "shared-dma-pool";
+				reg = <0x00 0x89000000 0x00 0x02000000>;
+				no-map;
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc@0/remoteproc@a300000/glink-edge/fastrpc";
+		__overlay__ {
+			memory-region = <&fastrpc_dma_pool>;
+		};
+	};
+
+	fragment@2 {
+		target-path = "/soc@0/remoteproc@3700000/glink-edge/fastrpc";
+		__overlay__ {
+			memory-region = <&fastrpc_dma_pool>;
+		};
+	};
+};

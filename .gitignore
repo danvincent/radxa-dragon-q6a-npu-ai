@@ -1,0 +1,20 @@
+# Rust build artifacts
+genie-rs/target/
+genie-rs/Cargo.lock
+
+# Large model files (track separately via git-lfs or don't include)
+*.bin
+*.serialized*
+*.gguf
+*.onnx
+*.dlc
+models/*.bin
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~

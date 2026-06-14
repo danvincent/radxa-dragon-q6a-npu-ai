@@ -1,0 +1,19 @@
+[Unit]
+Description=Genie-RS OpenAI-compatible API (Llama 3.2 1B on NPU)
+After=network.target
+
+[Service]
+Type=simple
+User=daniel
+WorkingDirectory=/home/daniel/llama-v68-model
+Environment=QAIRT=/home/daniel/qairt/2.47.0.260601
+Environment=LD_LIBRARY_PATH=/home/daniel/llama-v68-model
+Environment=PATH=/home/daniel/.cargo/bin:/usr/bin:/bin
+ExecStart=/home/daniel/source/dragon-ai/target/release/genie-rs serve \
+    --host 0.0.0.0:8080 \
+    --registry /home/daniel/source/dragon-ai/models/registry.toml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
