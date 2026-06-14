@@ -24,7 +24,7 @@ Run OpenAI-compatible chat completions on the **Radxa Dragon Q6A** board's **Qua
 | `genie-rs/src/server/routes.rs` | Chat completions handler + tool routing logic |
 | `genie-rs/src/config/` | Registry parsing + GenieDialog config generation |
 | `genie-rs/src/context/genie_context.rs` | GenieDialog C API wrapper |
-| `genie-rs/src/ffi/` | FFI bindings to QAIRT 2.47 |
+| `docs/07-model-build-pipeline.md` | ONNX → HTP context binary build pipeline |
 | `genie-rs/models/registry.toml` | Model registry — Llama + Qwen entries |
 | `docs/01-overview.md` | Architecture walkthrough |
 | `docs/02-npu-dma-fix.md` | DTB patching for fastrpc DMA |
