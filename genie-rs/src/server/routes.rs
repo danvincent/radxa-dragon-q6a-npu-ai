@@ -104,12 +104,12 @@ pub struct ModelInfo {
 pub async fn list_models(State(state): State<AppState>) -> Json<ModelList> {
     Json(ModelList {
         object: "list".to_string(),
-        data: vec![ModelInfo {
-            id: state.model_name.clone(),
+        data: state.model_names.iter().map(|name| ModelInfo {
+            id: name.clone(),
             object: "model".into(),
             created: 1718000000,
             owned_by: "genie-rs".into(),
-        }],
+        }).collect(),
     })
 }
 

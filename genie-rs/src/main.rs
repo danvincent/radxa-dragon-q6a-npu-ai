@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
             let ctx = GenieContext::new(&config_json)?;
             tracing::info!("Model loaded successfully");
 
-            server::run(host, ctx, entry.chat_template.clone(), model_name.clone()).await?;
+            server::run(host, ctx, entry.chat_template.clone(), model_name.clone(), registry.models.keys().cloned().collect()).await?;
         }
         Commands::List { registry } => {
             let registry_content = std::fs::read_to_string(registry)?;

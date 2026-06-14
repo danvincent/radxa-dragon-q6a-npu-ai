@@ -11,13 +11,15 @@ pub struct AppState {
     pub ctx: Arc<Mutex<GenieContext>>,
     pub chat_template: String,
     pub model_name: String,
+    pub model_names: Vec<String>,
 }
 
-pub async fn run(host: &str, ctx: GenieContext, chat_template: String, model_name: String) -> Result<()> {
+pub async fn run(host: &str, ctx: GenieContext, chat_template: String, model_name: String, model_names: Vec<String>) -> Result<()> {
     let state = AppState {
         ctx: Arc::new(Mutex::new(ctx)),
         chat_template,
         model_name,
+        model_names,
     };
 
     let app = Router::new()
