@@ -40,13 +40,15 @@ See `docs/02-npu-dma-fix.md` for the full procedure.
 - **Models**:
   - **Llama 3.2 1B** — QNN HTP context binary, INT8, 4096 context
   - **Qwen2.5-Coder-0.5B** — QNN HTP context binary, INT8, 32768 context
+  - **Qwen2.5-Coder-1.5B** — QNN HTP context binary, INT8, 32768 context
 - **Format**: QNN HTP context binary (`.serialized.bin`) — pre-compiled for Hexagon v68
 - **Source**:
   - Llama: [ModelScope — radxa/Llama3.2-1B-1024-qairt-v68](https://modelscope.cn/models/radxa/Llama3.2-1B-1024-qairt-v68) (recompiled for 4096 context)
-  - Qwen: Pre-compiled via `qnn-context-binary-generator` pipeline
+  - Qwen: Custom build via `qnn-context-binary-generator` pipeline
 - **Size**:
   - Llama: 1.7 GB (INT8 quantized, 4096 context window)
-  - Qwen: 310 MB (INT8 quantized, 32768 context window)
+  - Qwen 0.5B: 310 MB (INT8 quantized, 32768 context window)
+  - Qwen 1.5B: ~2 GB (INT8 quantized, 32768 context window)
 
 ### 3. genie-rs API Server
 
@@ -86,26 +88,28 @@ UEFI → systemd-boot → kernel + initrd + DTB from ESP
 The 32 MB pool sits in a ~144 MB gap between CDSP and ADSP regions.
 
 ## Key Constraints
-
-| Constraint | Detail |
-| **Context window** | 4096 (Llama), 32768 (Qwen) — limited by pre-compiled context binary |
-| **Memory** | ~3.5 GB during inference (1.7 GB Llama + 32 MB DMA pool + framework) |
+| **Context window** | 4096 (Llama), 32768 (Qwen 0.5B/1.5B) |
+| **Memory** | ~3.5 GB during inference (1.7 GB Llama) to ~4 GB (1.5B Qwen) |
 | **NPU only** | Uses QNN HTP (Hexagon v68). GenAiTransformer CPU fallback available |
 | **Tool calling** | Server-side routing — not model-dependent |
 
 ## File Layout on Dragon
 
 ```
-/home/daniel/
 ├── llama-4096-v68-model/         # Llama model directory
 │   ├── models/
 │   │   └── weight_sharing_model_1_of_1.serialized.bin  (1.7 GB)
 │   ├── tokenizer.json
-│   ├── htp-model-config-llama32-1b-gqa.json
 │   ├── htp_backend_ext_config.json
-│   ├── configuration.json
-│   ├── libQnnHtp.so
-│   └── libQnnHtpV68Skel.so
+│   └── libQnnHtp*.so
+├── Qwen2.5-0.5B-v68/             # Qwen 0.5B model directory
+│   ├── qwen-compiled.serialized.bin  (310 MB)
+│   ├── tokenizer.json
+│   └── htp_backend_ext_config.json
+├── qwen15-4096-v68-model/        # Qwen 1.5B model directory
+│   ├── models/
+│   │   └── qwen15_htp.bin  (~2 GB)
+│   └── htp_backend_ext_config.json
 ├── Qwen2.5-0.5B-v68/             # Qwen model directory
 │   ├── qwen-compiled.serialized.bin  (310 MB)
 │   ├── qwen2.5-0.5b.json

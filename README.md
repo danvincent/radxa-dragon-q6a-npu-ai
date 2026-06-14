@@ -8,6 +8,7 @@ Run OpenAI-compatible chat completions on the **Radxa Dragon Q6A** board's **Qua
 |-------|---------|---------|-------|-------|--------|
 | `llama32-1b` | HTP V68 (context binary) | 4096 | INT8 | ~6-8 tok/s | ModelScope |
 | `qwen2.5-coder-0.5b` | HTP V68 (context binary) | 32768 | INT8 | ~6-8 tok/s | Pre-compiled |
+| `qwen2.5-coder-1.5b` | HTP V68 (context binary) | 32768 | INT8 | ~6-8 tok/s | Custom build |
 
 ## Features
 
@@ -46,13 +47,18 @@ Run OpenAI-compatible chat completions on the **Radxa Dragon Q6A** board's **Qua
 - QAIRT 2.47 SDK at `~/qairt/2.47.0.260601/`
 - Rust toolchain (on Dragon)
 - Model files at `~/llama-4096-v68-model/` (Llama) and `~/Qwen2.5-0.5B-v68/` (Qwen)
-
-### 1. Build genie-rs (on Dragon)
-
-```bash
-cd /home/daniel/source/dragon-ai
-source ~/.cargo/env
-cargo build --release
+```json
+{
+  "providerId": "dragon-npu",
+  "type": "openai",
+  "apiBase": "http://dragon:8080/v1",
+  "models": {
+    "llama32-1b": { "tool_call": true, "maxOutput": 512 },
+    "qwen2.5-coder-0.5b": { "tool_call": true, "maxOutput": 2048 },
+    "qwen2.5-coder-1.5b": { "tool_call": true, "maxOutput": 4096 }
+  }
+}
+```
 ```
 
 ### 2. Apply NPU DMA fix

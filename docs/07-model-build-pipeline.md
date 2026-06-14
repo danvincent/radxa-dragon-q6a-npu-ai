@@ -221,12 +221,14 @@ HTP V68's Gather op doesn't accept `BOOL_8` data type.
 .dataType= QNN_DATATYPE_BOOL_8        → .dataType= QNN_DATATYPE_UFIXED_POINT_8
 {.scalarParam= (Qnn_Scalar_t) {BOOL… → {.scalarParam= (Qnn_Scalar_t) {BOOL… (keep)
 ```
-
-### Gather with quantized indices
-
-When Gather indices are quantized to `UFIXED_POINT_8` but HTP expects `UINT_32`:
+| Model | FP32 .bin | INT8 .bin | .so | HTP context binary |
+|-------|-----------|-----------|-----|-------------------|
+| Qwen2.5-Coder-0.5B | 2.4 GB | 602 MB | 603 MB | 619 MB |
+| Qwen2.5-Coder-1.5B | 6.7 GB | 1.7 GB | 1.7 GB | ~2 GB |
+| Llama 3.2 1B | — | — | — | 1.7 GB |
 - The `IsNaN` fix above eliminates the BOOL_8 → UFIXED_POINT_8 collision
 - If Gather still fails on indices, check that the index input tensor uses `INT_32` or `UINT_32`
+
 
 ## Performance
 
@@ -235,6 +237,7 @@ When Gather indices are quantized to `UFIXED_POINT_8` but HTP expects `UINT_32`:
 | Model | FP32 .bin | INT8 .bin | .so | HTP context binary |
 |-------|-----------|-----------|-----|-------------------|
 | Qwen2.5-Coder-0.5B | 2.4 GB | 602 MB | 603 MB | 619 MB |
+| Qwen2.5-Coder-1.5B | 6.7 GB | 1.7 GB | 1.7 GB | ~2 GB |
 | Llama 3.2 1B | — | — | — | 1.7 GB |
 
 ### Inference speed (on Dragon Q6A NPU v68)
@@ -242,6 +245,7 @@ When Gather indices are quantized to `UFIXED_POINT_8` but HTP expects `UINT_32`:
 | Model | Tokens/second | Notes |
 |-------|--------------|-------|
 | Qwen2.5-Coder-0.5B | ~6-8 tok/s | 32768 context |
+| Qwen2.5-Coder-1.5B | ~6-8 tok/s | 32768 context, same speed as 0.5B (NPU is compute-bound) |
 | Llama 3.2 1B | ~6-8 tok/s | 4096 context |
 
 ## Reference: Pre-compiled Models
