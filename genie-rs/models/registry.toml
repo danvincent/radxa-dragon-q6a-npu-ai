@@ -19,7 +19,7 @@ htp_ext = "/home/daniel/llama-4096-v68-model/htp_backend_ext_config.json"
 
 [models."qwen2.5-coder-0.5b"]
 model_type = "basic"
-context_size = 32768
+context_size = 4096
 n_vocab = 151936
 bos_token = 151644
 eos_token = 151643
@@ -35,7 +35,7 @@ htp_poll = true
 htp_ext = "/home/daniel/Qwen2.5-0.5B-v68/htp_backend_ext_config.json"
 [models."qwen2.5-coder-1.5b"]
 model_type = "basic"
-context_size = 32768
+context_size = 4096
 n_vocab = 151936
 bos_token = 151644
 eos_token = 151643
