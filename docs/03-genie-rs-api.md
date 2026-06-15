@@ -86,15 +86,15 @@ n_vocab = 128256
 bos_token = 128000
 eos_token = 128009
 pad_token = 128004
-tokenizer = "/home/daniel/llama-4096-v68-model/tokenizer.json"
-ctx_bins = ["/home/daniel/llama-4096-v68-model/models/weight_sharing_model_1_of_1.serialized.bin"]
+tokenizer = "${HOME}/llama-4096-v68-model/tokenizer.json"
+ctx_bins = ["${HOME}/llama-4096-v68-model/models/weight_sharing_model_1_of_1.serialized.bin"]
 chat_template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 backend_type = "QnnHtp"
 kv_dim = 64
 pos_id_dim = 32
 rope_theta = 500000.0
 htp_poll = true
-htp_ext = "/home/daniel/llama-4096-v68-model/htp_backend_ext_config.json"
+htp_ext = "${HOME}/llama-4096-v68-model/htp_backend_ext_config.json"
 
 [models."qwen2.5-coder-0.5b"]
 model_type = "basic"
@@ -103,15 +103,15 @@ n_vocab = 151936
 bos_token = 151644
 eos_token = 151643
 pad_token = 151643
-tokenizer = "/home/daniel/Qwen2.5-0.5B-v68/tokenizer.json"
-ctx_bins = ["/home/daniel/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin"]
+tokenizer = "${HOME}/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = ["${HOME}/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin"]
 chat_template = "<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{user_input}<|im_end|>\n<|im_start|>assistant\n"
 backend_type = "QnnHtp"
 kv_dim = 64
 pos_id_dim = 32
 rope_theta = 1000000.0
 htp_poll = true
-htp_ext = "/home/daniel/Qwen2.5-0.5B-v68/htp_backend_ext_config.json"
+htp_ext = "${HOME}/Qwen2.5-0.5B-v68/htp_backend_ext_config.json"
 ```
 
 ## Critical: CWD Requirement
@@ -164,7 +164,7 @@ Matching strategies:
 
 The systemd service file sets this automatically:
 ```
-WorkingDirectory=/home/daniel/llama-v68-model
+WorkingDirectory=${HOME}/llama-v68-model
 ```
 
 ## Systemd Service
@@ -176,14 +176,14 @@ After=network.target
 
 [Service]
 Type=simple
-User=daniel
-WorkingDirectory=/home/daniel/llama-v68-model
-Environment=QAIRT=/home/daniel/qairt/2.47.0.260601
-Environment=LD_LIBRARY_PATH=/home/daniel/llama-v68-model
-Environment=PATH=/home/daniel/.cargo/bin:/usr/bin:/bin
-ExecStart=/home/daniel/source/dragon-ai/target/release/genie-rs serve \
+User=${USER}
+WorkingDirectory=${HOME}/llama-v68-model
+Environment=QAIRT=${QAIRT_SDK:-/opt/qairt/2.47.0.260601}
+Environment=LD_LIBRARY_PATH=${HOME}/llama-v68-model
+Environment=PATH=${CARGO_HOME:-${HOME}/.cargo}/bin:/usr/bin:/bin
+ExecStart=${HOME}/source/dragon-ai/target/release/genie-rs serve \
     --host 0.0.0.0:8080 \
-    --registry /home/daniel/source/dragon-ai/models/registry.toml
+    --registry ${REGISTRY:-${HOME}/source/dragon-ai/models/registry.toml}
 Restart=on-failure
 RestartSec=5
 

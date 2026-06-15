@@ -52,7 +52,8 @@ async fn main() -> Result<()> {
             }
 
             let registry_content = std::fs::read_to_string(registry)?;
-            let registry: ModelRegistry = toml::from_str(&registry_content)?;
+            let mut registry: ModelRegistry = toml::from_str(&registry_content)?;
+            registry.expand_all_paths();
 
             let model_name = model.clone().unwrap_or(registry.default_model.clone());
             let entry = registry.models.get(&model_name)

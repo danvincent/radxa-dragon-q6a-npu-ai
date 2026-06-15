@@ -1,15 +1,16 @@
 [Unit]
-Description=Genie-RS OpenAI-compatible API (Llama 3.2 1B on NPU, 4096 ctx)
+Description=Genie-RS OpenAI-compatible API for Dragon NPU
 After=network.target
 
 [Service]
 Type=simple
-User=daniel
-WorkingDirectory=/home/daniel/llama-4096-v68-model
-Environment=QAIRT=/home/daniel/qairt/2.47.0.260601
-Environment=LD_LIBRARY_PATH=/home/daniel/llama-4096-v68-model
-Environment=PATH=/home/daniel/.cargo/bin:/usr/bin:/bin
-ExecStart=/home/daniel/source/dragon-ai/target/release/genie-rs serve --host 0.0.0.0:8080 --registry /home/daniel/source/dragon-ai/models/registry.toml
+User=${USER}
+Environment=QAIRT=${QAIRT_SDK:-/opt/qairt}
+Environment=LD_LIBRARY_PATH=${MODEL_DIR}
+Environment=PATH=${CARGO_HOME:-$HOME/.cargo}/bin:/usr/bin:/bin
+ExecStart=${GENIE_RS_BIN:-/opt/genie-rs}/genie-rs serve \
+    --host 0.0.0.0:8080 \
+    --registry ${REGISTRY:-/etc/genie-rs/registry.toml}
 Restart=on-failure
 RestartSec=5
 

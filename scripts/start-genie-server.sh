@@ -3,9 +3,15 @@
 # Must be run from the model directory
 set -euo pipefail
 
-MODEL_DIR="/home/daniel/llama-v68-model"
-REGISTRY="/home/daniel/source/dragon-ai/models/registry.toml"
-GENIE_BIN="/home/daniel/source/dragon-ai/target/release/genie-rs"
+MODEL_DIR="${MODEL_DIR:-}"
+REGISTRY="${REGISTRY:-./models/registry.toml}"
+GENIE_BIN="${GENIE_BIN:-./target/release/genie-rs}"
+
+if [ -z "$MODEL_DIR" ]; then
+    echo "Usage: MODEL_DIR=/path/to/model $0"
+    echo "Or set MODEL_DIR environment variable"
+    exit 1
+fi
 
 if [ ! -d "$MODEL_DIR" ]; then
     echo "ERROR: Model directory not found: $MODEL_DIR"
@@ -15,13 +21,13 @@ fi
 if [ ! -f "$GENIE_BIN" ]; then
     echo "ERROR: genie-rs binary not found: $GENIE_BIN"
     echo "Build it first:"
-    echo "  cd ~/source/dragon-ai && source ~/.cargo/env && cargo build --release"
+    echo "  cargo build --release"
     exit 1
 fi
 
 cd "$MODEL_DIR"
 
-export QAIRT="${QAIRT:-$HOME/qairt/2.47.0.260601}"
+export QAIRT="${QAIRT:-/opt/qairt}"
 export LD_LIBRARY_PATH="$MODEL_DIR"
 
 echo "=== Starting genie-rs ==="

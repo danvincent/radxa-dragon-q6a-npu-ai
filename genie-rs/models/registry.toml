@@ -1,4 +1,8 @@
-default_model = "llama32-1b"
+# Model registry for genie-rs
+# Paths support environment variable expansion: ${VAR} and ${VAR:-default}
+# Copy this file and adjust paths for your deployment.
+
+default_model = "qwen2.5-coder-3b-hybrid"
 
 [models."llama32-1b"]
 model_type = "basic"
@@ -7,15 +11,21 @@ n_vocab = 128256
 bos_token = 128000
 eos_token = 128009
 pad_token = 128004
-tokenizer = "/home/daniel/llama-4096-v68-model/tokenizer.json"
-ctx_bins = ["/home/daniel/llama-4096-v68-model/models/weight_sharing_model_1_of_1.serialized.bin"]
-chat_template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+tokenizer = "${HOME}/llama-4096-v68-model/tokenizer.json"
+ctx_bins = ["${HOME}/llama-4096-v68-model/models/weight_sharing_model_1_of_1.serialized.bin"]
+chat_template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+"
 backend_type = "QnnHtp"
 kv_dim = 64
 pos_id_dim = 32
 rope_theta = 500000.0
 htp_poll = true
-htp_ext = "/home/daniel/llama-4096-v68-model/htp_backend_ext_config.json"
+htp_ext = "${HOME}/llama-4096-v68-model/htp_backend_ext_config.json"
 
 [models."qwen2.5-coder-0.5b"]
 model_type = "basic"
@@ -24,15 +34,21 @@ n_vocab = 151936
 bos_token = 151644
 eos_token = 151643
 pad_token = 151643
-tokenizer = "/home/daniel/Qwen2.5-0.5B-v68/tokenizer.json"
-ctx_bins = ["/home/daniel/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin"]
-chat_template = "<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{user_input}<|im_end|>\n<|im_start|>assistant\n"
+tokenizer = "${HOME}/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = ["${HOME}/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin"]
+chat_template = "<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{user_input}<|im_end|>
+<|im_start|>assistant
+"
 backend_type = "QnnHtp"
 kv_dim = 64
 pos_id_dim = 32
 rope_theta = 1000000.0
 htp_poll = true
-htp_ext = "/home/daniel/Qwen2.5-0.5B-v68/htp_backend_ext_config.json"
+htp_ext = "${HOME}/Qwen2.5-0.5B-v68/htp_backend_ext_config.json"
+
 [models."qwen2.5-coder-1.5b"]
 model_type = "basic"
 context_size = 4096
@@ -40,12 +56,157 @@ n_vocab = 151936
 bos_token = 151644
 eos_token = 151643
 pad_token = 151643
-tokenizer = "/home/daniel/Qwen2.5-0.5B-v68/tokenizer.json"
-ctx_bins = ["/home/daniel/qwen15-4096-v68-model/models/qwen15_htp.bin"]
-chat_template = "<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{user_input}<|im_end|>\n<|im_start|>assistant\n"
+tokenizer = "${HOME}/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = ["${HOME}/qwen15-4096-v68-model/models/qwen15_htp.bin"]
+chat_template = "<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{user_input}<|im_end|>
+<|im_start|>assistant
+"
 backend_type = "QnnHtp"
 kv_dim = 128
 pos_id_dim = 64
 rope_theta = 1000000.0
 htp_poll = true
-htp_ext = "/home/daniel/qwen15-4096-v68-model/htp_backend_ext_config.json"
+htp_ext = "${HOME}/qwen15-4096-v68-model/htp_backend_ext_config.json"
+
+[models."qwen2.5-coder-1.5b-instruct"]
+model_type = "basic"
+context_size = 4096
+n_vocab = 151936
+bos_token = 151644
+eos_token = 151643
+pad_token = 151643
+tokenizer = "${HOME}/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = ["${HOME}/qwen15-inst-4096-v68-model/models/qwen15_inst_htp.bin"]
+chat_template = "<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{user_input}<|im_end|>
+<|im_start|>assistant
+"
+backend_type = "QnnHtp"
+kv_dim = 128
+pos_id_dim = 64
+rope_theta = 1000000.0
+htp_poll = true
+htp_ext = "${HOME}/qwen15-inst-4096-v68-model/htp_backend_ext_config.json"
+
+[models."qwen2.5-coder-3b-layers"]
+model_type = "basic"
+context_size = 4096
+n_vocab = 151936
+bos_token = 151644
+eos_token = 151643
+pad_token = 151643
+tokenizer = "${HOME}/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = [
+  "/tmp/mlp_htp/qwen_mlp_00.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_01.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_02.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_03.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_04.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_05.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_06.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_07.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_08.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_09.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_10.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_11.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_12.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_13.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_14.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_15.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_16.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_17.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_18.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_19.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_20.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_21.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_22.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_23.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_24.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_25.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_26.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_27.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_28.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_29.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_30.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_31.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_32.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_33.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_34.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_35.QCS6490.bin",
+]
+chat_template = "<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{user_input}<|im_end|>
+<|im_start|>assistant
+"
+backend_type = "QnnHtp"
+kv_dim = 128
+pos_id_dim = 64
+rope_theta = 1000000.0
+htp_poll = true
+htp_ext = "${HOME}/llama-4096-v68-model/htp_backend_ext_config.json"
+
+[models."qwen2.5-coder-3b-hybrid"]
+model_type = "hybrid"
+context_size = 8192
+n_vocab = 151936
+bos_token = 151644
+eos_token = 151643
+pad_token = 151643
+tokenizer = "${HOME}/Qwen2.5-0.5B-v68/tokenizer.json"
+ctx_bins = [
+  "/tmp/mlp_htp/qwen_mlp_00.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_01.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_02.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_03.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_04.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_05.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_06.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_07.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_08.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_09.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_10.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_11.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_12.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_13.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_14.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_15.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_16.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_17.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_18.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_19.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_20.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_21.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_22.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_23.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_24.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_25.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_26.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_27.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_28.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_29.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_30.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_31.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_32.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_33.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_34.QCS6490.bin",
+  "/tmp/mlp_htp/qwen_mlp_35.QCS6490.bin",
+]
+chat_template = "<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{user_input}<|im_end|>
+<|im_start|>assistant
+"
+backend_type = "QnnHtp"
+kv_dim = 128
+pos_id_dim = 64
+rope_theta = 1000000.0
+htp_poll = true
+htp_ext = "${HOME}/llama-4096-v68-model/htp_backend_ext_config.json"
