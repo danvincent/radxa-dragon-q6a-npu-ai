@@ -41,9 +41,32 @@ pub struct ToolFunction {
 #[derive(Deserialize)]
 pub struct Message {
     pub role: String,
-    pub content: Option<String>,
+    
+    pub content: Option<serde_json::Value>,
     pub tool_calls: Option<Vec<ToolCallBlock>>,
     pub tool_call_id: Option<String>,
+}
+
+fn deserialize_content<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where D: serde::Deserializer<'de> {
+    use serde::de;
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::String(s) => Ok(Some(s)),
+        serde_json::Value::Array(arr) => {
+            // Extract text from content blocks: [{"type":"text","text":"..."}, ...]
+            let mut text = String::new();
+            for item in arr {
+                if let Some(t) = item.get("text").and_then(|v| v.as_str()) {
+                    text.push_str(t);
+                    text.push('\n');
+                }
+            }
+            if text.is_empty() { Ok(None) } else { Ok(Some(text.trim_end().to_string())) }
+        }
+        serde_json::Value::Null => Ok(None),
+        _ => Ok(None),
+    }
 }
 
 #[derive(Deserialize)]
@@ -53,6 +76,20 @@ pub struct ToolCallBlock {
     pub type_: Option<String>,
     pub function: Option<ToolCallFunction>,
 }
+fn msg_content(msg: &Message) -> String {
+    match &msg.content {
+        Some(serde_json::Value::String(s)) => s.clone(),
+        Some(serde_json::Value::Array(arr)) => {
+            arr.iter()
+                .filter_map(|v| v.get("text").and_then(|t| t.as_str()))
+                .collect::<Vec<_>>()
+                .join("
+")
+        }
+        _ => String::new(),
+    }
+}
+
 
 #[derive(Deserialize)]
 pub struct ToolCallFunction {
@@ -93,101 +130,79 @@ fn model_name(state: &AppState, req: &ChatRequest) -> String {
 }
 
 fn build_prompt(state: &AppState, messages: &[Message], tools: Option<&Vec<ToolDef>>) -> String {
+    const MAX_CHARS: usize = 4000; // ~1000 tokens, fits in KV cache
     let mut system = String::new();
-    let mut history = String::new();
-    let mut last_user = String::new();
+    let mut parts: Vec<(bool, String)> = Vec::new(); // (is_user, content)
     let mut tool_context = String::new();
-    let mut found_last_user = false;
 
-    // Collect messages in order, tagging the last user message
-    for msg in messages.iter().rev() {
+    for msg in messages {
         match msg.role.as_str() {
-            "system" if !found_last_user => {
-                system = msg.content.clone().unwrap_or_default();
-            }
-            "user" if !found_last_user => {
-                last_user = msg.content.clone().unwrap_or_default();
-                found_last_user = true;
-            }
-            "user" => {
-                // Older user message (will be part of history if within window)
-                let content = msg.content.clone().unwrap_or_default();
-                let turn = format!("User: {}\n", content);
-                history = turn + &history;
-            }
+            "system" => { system = msg_content(msg); }
+            "user" => { parts.push((true, msg_content(&msg))); }
             "assistant" => {
                 if let Some(tc) = &msg.tool_calls {
                     for call in tc {
                         if let Some(func) = &call.function {
                             if let (Some(name), Some(args)) = (&func.name, &func.arguments) {
-                                tool_context.push_str(&format!(
-                                    "Assistant called function '{}' with arguments: {}\n",
-                                    name, args
-                                ));
+                                tool_context.push_str(&format!("Assistant called '{}' with args: {}\n", name, args));
                             }
                         }
                     }
-                } else if let Some(content) = &msg.content {
-                    let turn = format!("Assistant: {}\n", content);
-                    history = turn + &history;
+                } else if let Some(c) = &msg.content {
+                    parts.push((false, msg_content(&msg)));
                 }
             }
             "tool" => {
-                let content = msg.content.clone().unwrap_or_default();
+                let c = msg_content(msg);
                 let id = msg.tool_call_id.clone().unwrap_or_default();
-                tool_context.push_str(&format!(
-                    "Function result (call {}):\n{}\n\n",
-                    id, content
-                ));
+                tool_context.push_str(&format!("Result({}):\n{}\n\n", id, c));
             }
             _ => {}
         }
     }
 
-    // Append tool results as tool context after last user
+    // Append tool context to the last user message
     if !tool_context.is_empty() {
-        let base = last_user;
-        last_user = format!(
-            "{}\n\n<tool_context>\n{}Please respond based on the results above.</tool_context>",
-            base, tool_context
-        );
+        if let Some((true, last)) = parts.last_mut() {
+            last.push_str(&format!("\n<tool_context>\n{}Based on results above, respond.</tool_context>", tool_context));
+        }
     }
 
-    // Build the full conversation, truncating if needed
-    // Format: system + [history] + last_user
-    let full_conversation = if !history.is_empty() {
-        format!("{}\n{}User: {}", history, last_user, "")
-            .replace("User: ", "", 1)  // remove trailing marker
-    } else {
-        last_user.clone()
-    };
+    // Limit system prompt
+    if system.len() > 6000 { let t: String = system.chars().take(6000).collect(); system = format!("{}... [truncated]", t.trim_end()); }
 
-    // Limit system prompt to avoid exceeding context window
-    const MAX_SYSTEM_CHARS: usize = 6000;
-    if system.len() > MAX_SYSTEM_CHARS {
-        let truncated: String = system.chars().take(MAX_SYSTEM_CHARS).collect();
-        system = format!("{}... [system prompt truncated to fit context]", truncated.trim_end());
+    // Find last user
+    let mut last_user = String::new();
+    if let Some((_, c)) = parts.iter().rev().find(|(is_user, _)| *is_user) { last_user = c.clone(); }
+
+    // Build full prompt from scratch: system + history + last_user
+    // Format: <|im_start|>system\n{sys}<|im_end|>\n<|im_start|>user\n{msg}<|im_end|>\n...
+    let mut result = String::new();
+    result.push_str(&format!("<|im_start|>system\n{}<|im_end|>\n", system));
+
+    let mut budget = MAX_CHARS;
+    let mut history_turns: Vec<String> = Vec::new();
+    let mut found_last = false;
+
+    for (is_user, content) in parts.iter().rev() {
+        if *is_user && !found_last { found_last = true; continue; }
+        let role = if *is_user { "user" } else { "assistant" };
+        history_turns.push(format!("<|im_start|>{}\n{}<|im_end|>", role, content));
     }
 
-    // Estimate total length and trim history if needed
-    let template = state.chat_template
-        .replace("{system_prompt}", &system)
-        .replace("{user_input}", &full_conversation);
-
-    // Rough token estimate: 4 chars per token
-    let max_tokens: usize = 4000; // leave room for output
-    let est_tokens = template.len() / 4;
-
-    if est_tokens > max_tokens {
-        // Trim history aggressively, keeping last ~2000 chars
-        let keep = last_user.clone();
-        let trimmed = format!("[earlier conversation truncated...]\n{}", keep);
-        state.chat_template
-            .replace("{system_prompt}", &system)
-            .replace("{user_input}", &trimmed)
-    } else {
-        template
+    // Add history (oldest to newest), trimming to fit
+    for turn in history_turns.iter().rev() {
+        if result.len() + turn.len() + last_user.len() + 100 > budget {
+            result.push_str("<|im_start|>user\n[history truncated...]<|im_end|>\n");
+            break;
+        }
+        result.push_str(turn);
+        result.push('\n');
     }
+
+    // Last user + assistant marker
+    result.push_str(&format!("<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n", last_user));
+    result
 }
 
 fn run_query(state: &AppState, prompt: &str, tx: mpsc::Sender<String>) -> mpsc::Receiver<String> {
@@ -378,20 +393,7 @@ fn extract_tool_args(user_msg: &str, func: &ToolFunction) -> String {
     "{}".to_string()
 }
 
-fn extract_path_after_keyword(text: &str, key: &str) -> Option<String> {
-    let lower = text.to_lowercase();
-    let keywords = ["read ", "at ", "from ", "path ", "file "];
-    for kw in keywords {
-        if let Some(idx) = lower.rfind(kw) {
-            let after = text[idx + kw.len()..].trim();
-            if !after.is_empty() {
-                let path = after.split_whitespace().next()?;
-                return Some(path.to_string());
-            }
-        }
-    }
-    None
-}
+
 
 pub async fn chat_completions(
     State(state): State<AppState>,
@@ -406,11 +408,11 @@ pub async fn chat_completions(
         if let Some(user_msg) = req.messages.iter()
             .last()
             .filter(|m| m.role == "user")
-            .and_then(|m| m.content.as_deref())
+            .map(|m| msg_content(m))
         {
             if !user_msg.is_empty() {
                 if let Some((name, args)) =
-                    route_user_message(req.tools.as_ref().unwrap(), user_msg)
+                    route_user_message(req.tools.as_ref().unwrap(), user_msg.as_str())
                 {
                     return build_tool_call_response(&model, name, args);
                 }
