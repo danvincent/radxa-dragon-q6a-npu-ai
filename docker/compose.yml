@@ -1,0 +1,42 @@
+services:
+  # Build the Hybrid GenieDialog library
+  genie-builder:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: genie-builder
+    image: dragon-npu/genie-builder:latest
+    container_name: genie-builder
+    volumes:
+      - /home/daniel/qairt/2.47.0.260601:/opt/qairt:Z
+      - /home/daniel/source/dragon-convert/dragon-npu-api:/workspace:Z
+    command: /workspace/scripts/build-genie-hybrid.sh
+
+  # Build MLP HTP context binaries (requires x86_64 QNN tools)
+  mlp-builder:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: mlp-builder
+    image: dragon-npu/mlp-builder:latest
+    container_name: mlp-builder
+    volumes:
+      - /home/daniel/qairt/2.47.0.260601:/opt/qairt:Z
+      - /home/daniel/source/dragon-convert/dragon-npu-api:/workspace:Z
+    command: bash -c "python3 /workspace/scripts/export_all_mlp.py && bash /workspace/scripts/convert_mlp_int8.sh"
+    # Note: MLP conversion needs x86_64-linux-clang QNN tools from the SDK
+
+  # Interactive shell for development
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: genie-builder
+    image: dragon-npu/genie-builder:latest
+    container_name: dragon-npu-dev
+    volumes:
+      - /home/daniel/qairt/2.47.0.260601:/opt/qairt:Z
+      - /home/daniel/source/dragon-convert/dragon-npu-api:/workspace:Z
+    stdin_open: true
+    tty: true
+    command: /bin/bash
