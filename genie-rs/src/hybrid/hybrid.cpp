@@ -16,6 +16,7 @@
 #include "Trace.hpp"
 #include "hybrid.hpp"
 #include "qualla/detail/Log.hpp"
+#include "qnn_handles.h"
 
 #include "QnnInterface.h"
 #include "QnnBackend.h"
@@ -294,12 +295,6 @@ bool HybridDialog::executeMlp(int layer, const float* input, float* output) {
     return true;
 }
 
-void HybridDialog::cpuLayer(int layer, float* hidden, int pos,
-                            const float* cos, const float* sin) {
-    // Placeholder: for now, this copies hidden through.
-    // Full implementation requires attention weights loaded from safetensors.
-    // The MLP is called by the caller after this returns.
-}
 
 bool HybridDialog::process(std::vector<int32_t>& tokens, qualla::DialogCallback callback) {
     GENIE_TRACE();
