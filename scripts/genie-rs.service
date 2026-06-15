@@ -8,7 +8,7 @@ Type=simple
 User=daniel
 WorkingDirectory=/home/daniel/llama-4096-v68-model
 QAIRT=/home/daniel/qairt/2.47.0.260601
-LD_LIBRARY_PATH=/home/daniel/qairt/2.47.0.260601/lib/aarch64-oe-linux-gcc11.2:/home/daniel/qairt/2.47.0.260601/lib/aarch64-ubuntu-gcc9.4:/home/daniel/qairt/2.47.0.260601/lib/hexagon-v68/unsigned:/home/daniel/llama-4096-v68-model
+#LD_LIBRARY_PATH=/home/daniel/qairt/2.47.0.260601/lib/aarch64-oe-linux-gcc11.2:/home/daniel/qairt/2.47.0.260601/lib/aarch64-ubuntu-gcc9.4:/home/daniel/qairt/2.47.0.260601/lib/hexagon-v68/unsigned:/home/daniel/llama-4096-v68-model
 PATH=/home/daniel/.cargo/bin:/usr/bin:/bin
 ExecStart=/home/daniel/source/dragon-ai/target/release/genie-rs serve --host 0.0.0.0:8080 --registry /home/daniel/source/dragon-ai/models/registry.toml
 Restart=on-failure
@@ -16,3 +16,5 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
+
+LD_LIBRARY_PATH=/home/daniel/qairt/2.47.0.260601/lib/aarch64-oe-linux-gcc11.2:/home/daniel/qairt/2.47.0.260601/lib/aarch64-ubuntu-gcc9.4:/home/daniel/qairt/2.47.0.260601/lib/hexagon-v68/unsigned:/home/daniel/llama-4096-v68-model
