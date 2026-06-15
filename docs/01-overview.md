@@ -88,8 +88,8 @@ UEFI → systemd-boot → kernel + initrd + DTB from ESP
 The 32 MB pool sits in a ~144 MB gap between CDSP and ADSP regions.
 
 ## Key Constraints
-| **Context window** | 4096 (Llama), 32768 (Qwen 0.5B/1.5B) |
-| **Memory** | ~3.5 GB during inference (1.7 GB Llama) to ~4 GB (1.5B Qwen) |
+| **Context window** | 4096 for all models — limited by Hexagon v68 DSP internal memory, not system RAM. A Qwen 1.5B 8K context binary was successfully generated (1.8GB) but failed at runtime: `"Failed to initialize graph memory"`. |
+| **Memory** | ~2.5 GB during inference (model + DMA pool + framework) |
 | **NPU only** | Uses QNN HTP (Hexagon v68). GenAiTransformer CPU fallback available |
 | **Tool calling** | Server-side routing — not model-dependent |
 

@@ -244,13 +244,29 @@ HTP V68's Gather op doesn't accept `BOOL_8` data type.
 
 | Model | Tokens/second | Notes |
 |-------|--------------|-------|
-| Qwen2.5-Coder-0.5B | ~6-8 tok/s | 32768 context |
-| Qwen2.5-Coder-1.5B | ~6-8 tok/s | 32768 context, same speed as 0.5B (NPU is compute-bound) |
+| Qwen2.5-Coder-0.5B | ~6-8 tok/s | 4096 context (DSP memory limited) |
+| Qwen2.5-Coder-1.5B | ~6-8 tok/s | 4096 context (DSP memory limited) |
 | Llama 3.2 1B | ~6-8 tok/s | 4096 context |
+
+
+## Context Size Limits
+
+All HTP models on the QCS6490 V68 are limited to **4096 context** by DSP local memory.
+The `qnn-context-binary-generator` can produce larger binaries (tested 8192 for Qwen 1.5B,
+1.8GB binary) but they fail at runtime: `"Failed to initialize graph memory"`.
+
+The bottleneck is the Hexagon V68's internal memory, not system RAM. Spill/fill DDR bandwidth
+at 8K was 1.3 GB, indicating the graph couldn't fit in DSP VTCM and the DMA pool was
+insufficient. A SoC with larger DSP memory or a model with smaller intermediate tensors
+needed to exceed 4096 context.
 
 ## Reference: Pre-compiled Models
 
+
 Pre-compiled HTP context binaries for Qwen2.5-Coder-0.5B already exist at:
-- `/home/daniel/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin` (310 MB, INT8, 32768 ctx)
+- `/home/daniel/Qwen2.5-0.5B-v68/qwen-compiled.serialized.bin` (310 MB, INT8)
+
+Note: Despite having `max_position_embeddings=32768` in the HuggingFace config,
+all HTP models on QCS6490 V68 are limited to 4096 context by DSP local memory.
 
 The pipeline described here produces a **619 MB** binary (same model, same architecture). The size difference comes from quantization granularity (4-bit vs 8-bit or different weight sharing). Both work identically for inference.
