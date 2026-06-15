@@ -77,7 +77,7 @@ mkdir -p $OBJ
 
 echo "=== Compiling sources ==="
 N=0
-cc() { N=$((N+1)); local s=$1 o=$2; printf "\r  [%02d] %-40s" $N "$o"; $CXX -c $CXXFLAGS $DEFS $INCLUDES "$s" -o "$OBJ/$o.o" 2>/dev/null || { echo "FAIL $o"; return 1; }; }
+cc() { N=$((N+1)); local s=$1 o=$2; printf "\r  [%02d] %-40s" $N "$o"; output=$($CXX -c $CXXFLAGS $DEFS $INCLUDES "$s" -o "$OBJ/$o.o" 2>&1) && echo "  OK" || { echo "  FAIL: $output"; return 1; }; }
 
 # Core
 for f in dialog context sampler tokenizer engine env encoder; do
