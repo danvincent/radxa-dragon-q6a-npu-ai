@@ -200,8 +200,15 @@ fn build_prompt(state: &AppState, messages: &[Message], tools: Option<&Vec<ToolD
         result.push('\n');
     }
 
-    // Last user + assistant marker
-    result.push_str(&format!("<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n", last_user));
+    // Last user message - truncate if too long (content from @file references can be large)
+    let remaining = budget.saturating_sub(result.len() + 50);
+    let truncated_user = if last_user.len() > remaining {
+        let keep: String = last_user.chars().take(remaining.saturating_sub(100)).collect();
+        format!("{}...[file content truncated to fit context]", keep.trim_end())
+    } else {
+        last_user
+    };
+    result.push_str(&format!("<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n", truncated_user));
     result
 }
 
