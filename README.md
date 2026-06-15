@@ -1,14 +1,5 @@
 # Dragon NPU API — LLM Inference on Hexagon v68 NPU
 
-Run OpenAI-compatible chat completions on the **Radxa Dragon Q6A** board's **Qualcomm Hexagon v68 NPU** (QCS6490).
-
-## Models
-
-| Model | Backend | Context | Quant | Speed | Source |
-|-------|---------|---------|-------|-------|--------|
-| `llama32-1b` | HTP V68 (context binary) | 4096 | INT8 | ~6-8 tok/s | ModelScope |
-| `qwen2.5-coder-0.5b` | HTP V68 (context binary) | 32768 | INT8 | ~6-8 tok/s | Pre-compiled |
-| `qwen2.5-coder-1.5b` | HTP V68 (context binary) | 32768 | INT8 | ~6-8 tok/s | Custom build |
 
 ## Features
 
@@ -16,8 +7,22 @@ Run OpenAI-compatible chat completions on the **Radxa Dragon Q6A** board's **Qua
 - **Tool calling**: server-side routing detects tool intent from user message; returns proper `tool_calls` response
 - **Streaming**: SSE chunked streaming for real-time text generation
 - **Opencode integration**: `opencode run -m dragon-npu/llama32-1b` works out of the box
+## Models
 
-## Repo Contents
+| Model | HTP binaries | Context | Speed | Tool calling | Pipeline |
+|-------|-------------|---------|-------|-------------|----------|
+| `llama32-1b` | 1 × 1.7 GB | 4096 | 36 c/s | Server-side routing | Pre-compiled (ModelScope) |
+| `qwen2.5-coder-0.5b` | 1 × 310 MB | 4096 | 36 c/s | Server-side routing | Custom build |
+| `qwen2.5-coder-1.5b` | 1 × ~2 GB | 4096 | 34 c/s | Server-side routing | Custom build |
+| `qwen2.5-coder-1.5b-instruct` | 1 × ~2 GB | 4096 | 34 c/s | **Native function calling** | Custom build |
+| `qwen2.5-coder-3b-layers` | **36 × 75 MB** | 4096 | **41 c/s** | Server-side routing | **Layer-by-layer** |
+
+**Context window**: 4096 tokens for all models — limited by Hexagon v68 DSP internal memory.
+Attempts to exceed 4096 (8K context binary for Qwen 1.5B) failed with `"Failed to initialize graph memory"`. The layer-by-layer approach (36 individual HTP binaries chained by GenieDialog) makes the 3B model possible within the same 4096 context limit.
+
+**Context scaling strategies** (see docs):
+- **Attention sinks (StreamingLLM)**: Host-side KV buffer rolling with 4-token locked sinks. No recompilation needed. Keeps HTP footprint at 1024 tokens while generating infinitely.
+- **Hybrid CPU attention + NPU MLP**: Offloads the O(N²) self-attention to CPU with full KV cache (8K+), runs only the compute-bound MLP/FFN on NPU. Requires compiling 36 MLP-only HTP binaries.
 
 | Path | Description |
 |------|-------------|
